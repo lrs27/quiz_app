@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/app_configure.dart';
+import '../app_configure.dart';
 import '../models/question.dart';
 import '../services/trivia_service.dart';
 import 'result_screen.dart';
@@ -61,17 +61,45 @@ class _QuizScreenState extends State<QuizScreen> {
     _selectedAnswer = null;
   }
 
+  // Difficulty-based scoring
+  int _pointsForDifficulty(String difficulty) {
+    switch (difficulty.toUpperCase()) {
+      case 'HARD':
+        return 3;
+      case 'MEDIUM':
+        return 2;
+      default:
+        return 1; // EASY
+    }
+  }
+
   void _onAnswerTap(String answer) {
     if (_answered) return;
 
-    final correct = _questions[_currentIndex].correctAnswer;
+    final q = _questions[_currentIndex];
+    final correct = q.correctAnswer;
+    final isCorrect = answer == correct;
+
     setState(() {
       _selectedAnswer = answer;
       _answered = true;
-      if (answer == correct) _score++;
+      if (isCorrect) {
+        _score += _pointsForDifficulty(q.difficulty);
+      }
     });
 
-    Future.delayed(const Duration(milliseconds: 1500), _nextQuestion);
+    //  SnackBar feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isCorrect ? '✅ Correct!' : '❌ Wrong! Correct: $correct'),
+        backgroundColor: isCorrect
+            ? Colors.green.shade700
+            : Colors.red.shade700,
+        duration: const Duration(milliseconds: 1200),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   void _nextQuestion() {
@@ -154,6 +182,8 @@ class _QuizScreenState extends State<QuizScreen> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
+
+            // ⭐ Answer buttons
             ..._currentAnswers.map(
               (option) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -166,6 +196,28 @@ class _QuizScreenState extends State<QuizScreen> {
                 ),
               ),
             ),
+
+            // Manual Next Button
+            if (_answered)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: ElevatedButton(
+                  onPressed: _nextQuestion,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    _currentIndex + 1 == _questions.length
+                        ? 'See Results →'
+                        : 'Next Question →',
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
