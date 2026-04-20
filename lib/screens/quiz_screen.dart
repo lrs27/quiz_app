@@ -48,7 +48,11 @@ class _QuizScreenState extends State<QuizScreen> {
       });
     } catch (error) {
       setState(() {
-        _errorMessage = error.toString();
+        if (error.toString().contains('SocketException')) {
+          _errorMessage = 'No internet connection. Please check your network.';
+        } else {
+          _errorMessage = 'Something went wrong. Please try again.';
+        }
         _loading = false;
       });
     }
